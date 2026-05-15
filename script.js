@@ -4,6 +4,7 @@ const selectedDateText = document.getElementById("selectedDate");
 const workoutText = document.getElementById("workoutText");
 const importFile = document.getElementById("importFile");
 const monthLabel = document.getElementById("monthLabel");
+const resultBox = document.getElementById("result");
 
 let selectedDate = "";
 let currentDate = new Date();
@@ -25,16 +26,14 @@ function generateCalendar() {
 
   monthLabel.textContent = firstDay.toLocaleString("default", {
     month: "long",
-    year: "numeric",
+    year: "numeric"
   });
 
   const startDay = firstDay.getDay();
   const daysInMonth = lastDay.getDate();
 
-  // empty slots
   for (let i = 0; i < startDay; i++) {
-    const empty = document.createElement("div");
-    calendar.appendChild(empty);
+    calendar.appendChild(document.createElement("div"));
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -75,14 +74,31 @@ function closeModal() {
   modal.style.display = "none";
 }
 
-function saveWorkout() {
+async function saveWorkout() {
   if (!selectedDate) return;
 
   localStorage.setItem(selectedDate, workoutText.value);
+
   generateCalendar();
   closeModal();
-}
 
+  const msg = await generateEncouragement(workoutText.value);
+  alert(msg);
+}
+/*
+function getLocalEncouragement(text) {
+  if (!text || text.length < 10) return "Good work showing up.";
+
+  const messages = [
+    "Solid work today. Keep building consistency.",
+    "Nice session. Small steps compound into strength.",
+    "Good training — recovery matters just as much now.",
+    "Strong effort. Stay disciplined and keep progressing."
+  ];
+
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+*/
 function exportWorkouts() {
   let exportText = "";
 
@@ -117,7 +133,7 @@ importFile.addEventListener("change", (event) => {
 
     const sections = text.split("------------------");
 
-    sections.forEach((section) => {
+    sections.forEach(section => {
       const trimmed = section.trim();
       if (!trimmed) return;
 
@@ -151,8 +167,21 @@ function calculate1RM() {
   const estimatedReps = reps + rir;
   const estimated1RM = weight * (1 + estimatedReps / 30);
 
-  document.getElementById("result").textContent =
-    `Estimated 1RM: ${estimated1RM.toFixed(1)} kg`;
+  resultBox.textContent = `Estimated 1RM: ${estimated1RM.toFixed(1)} kg`;
 }
 
+async function generateEncouragement(workoutText) {
+  const res = await fetch("/api/encouragement", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ workout: workoutText })
+  });
+
+  const data = await res.json();
+  return data.message;
+}
+
+// Init
 generateCalendar();
